@@ -62,23 +62,23 @@ mtxs = [L, R, O]
 poly_m = []
 
 for m in mtxs:
-    print("m",m)
     poly_list = []
     for i in range(0, m.shape[1]):
-        points_x = FP(np.zeros(m.shape[0], dtype=int))
-        points_y = FP(np.zeros(m.shape[0], dtype=int))
+        points_x = FP(np.zeros(m.shape[0], dtype=int)) # [0, 0, 0, 0, 0]
+        points_y = FP(np.zeros(m.shape[0], dtype=int)) #[0, 0, 0, 0, 0]
         for j in range(0, m.shape[0]):
             points_x[j] = FP(j+1)
             points_y[j] = m[j][i]
 
+        # points_x = [1, 2, 3, 4, 5]
+        # points_y = [1, 0, 5, 0, 13]
         poly = galois.lagrange_poly(points_x, points_y)
-        coef = poly.coefficients()[::-1]
+        coef = poly.coefficients()[::-1] # reverse
         if len(coef) < m.shape[0]:
             coef = np.append(coef, np.zeros(m.shape[0] - len(coef), dtype=int))
         poly_list.append(coef)
 
     poly_m.append(FP(poly_list))
-    # print("poly_list", poly_list)
 
 Lp = poly_m[0]
 Rp = poly_m[1]
@@ -108,16 +108,19 @@ tau = FP(20)
 # assert U(tau)*V(tau) == W(tau) # will fail
 print(f"τ = {tau}")
 
-T = galois.Poly([1, p-1], field=FP)
+T = galois.Poly([1, p-1], field=FP)  #T(x) = x - 1
 for i in range(2, L.shape[0] + 1):
     T *= galois.Poly([1, p-i], field=FP)
 
+# T(x) = (x-1)(x-2)(x-3)(x-4)(x-5)
 print("\nT = ", T)
+
+# T(1)=0, T(2)=0, T(3)=0, T(4)=0, T(5)=0, T(6)=49
 for i in range(1, L.shape[0] + 2):
     print(f"T({i}) = ", T(i))
     if i == L.shape[0]:
         print("-"*10)
-
+        
 T_tau = T(tau)
 print(f"\nT(τ) = {T_tau}")
 
@@ -136,7 +139,7 @@ ht = H(tau)*T_tau
 
 assert u * v - _w == ht, f"{u} * {v} - {_w} != {ht}" # this equation should hold
 
-# Part 4
+# # # Part 4
 print("----------------------------------------- Part 4 -----------------------------------------")
 print("Setup phase")
 print("-"*10)
@@ -174,9 +177,13 @@ def evaluate_poly(poly, trusted_points, verbose=False):
     if verbose:
         [print(normalize(point)) for point in trusted_points]
 
-    terms = [multiply(point, int(coeff)) for point, coeff in zip(trusted_points, coeff)]
+    # zip: pairs each element in trusted_points with the corresponding coefficient in coeff.
+    # For each pair (point, coeff), it computes multiply(point, int(coeff))
+    # This creates a list terms where each element is point * coeff.
+    terms = [multiply(point, int(coeff)) for point, coeff in zip(trusted_points, coeff)]  
     evaluation = terms[0]
     for i in range(1, len(terms)):
+        # Accumulate the Sum
         evaluation = add(evaluation, terms[i])
 
     if verbose:
@@ -206,7 +213,7 @@ print(f"[C]G1 = {normalize(C_G1)}")
 print("\nProof verification:")
 print("-"*10)
 # e(A, B) == e(C, G2[1])
-assert pairing(B_G2, A_G1) == pairing(G2, C_G1), "Pairing check failed!"
+assert pairing(B_G2, A_G1) == pairing(G2, C_G1)
 print("Pairing check passed!")
 
 # Part 5
@@ -225,6 +232,7 @@ def print_evaluation(name, results):
     for i in range(0, len(results)):
         print(f'{name}_{i} = {results[i]}')
 
+# converts each row of a matrix into a polynomial object
 def to_poly(mtx):
     poly_list = []
     for i in range(0, mtx.shape[0]):
@@ -326,22 +334,13 @@ print("Verifier's Part")
 # B = B + β
 # C = βA + αB + C
 # AB == αβ + [βA + αB + C]
-print(type(B_G2[0]), type(B_G2[1]), type(B_G2[2]))
-print(type(A_G1[0]), type(A_G1[1]), type(A_G1[2]))
-
-
-print("pairing(B_G2, A_G1)", pairing(B_G2, A_G1))
-print("pairing(G2, C_G1)", pairing(G2, C_G1))
-# print("pairing(beta_G1, alpha_G1)", pairing(beta_G1, alpha_G1))
-
-assert pairing(B_G2, A_G1) == pairing(G2, C_G1), "Pairing check failed!"
 # assert pairing(B_G2, A_G1) == pairing(beta_G1, alpha_G1) + pairing(G2, C_G1)
 
 print("Public and private inputs separation")
 def split_poly(poly):
     coef = [int(c) for c in poly.coefficients()]
-    p1 = coef[-2:]
-    p2 = coef[:-2] + [0] * 2
+    p1 = coef[-2:] # [1, out]
+    p2 = coef[:-2] + [0] * 2 
 
     return galois.Poly(p1, field=FP), galois.Poly(p2, field=FP)
 
@@ -363,8 +362,8 @@ u2 = U2(tau)
 v1 = V1(tau)
 v2 = V2(tau)
 
-c = (beta * u2 + alpha * v2 + w2) + ht 
-k = (beta * u1 + alpha * v1 + w1)
+c = (beta * u2 + alpha * v2 + w2) + ht  # c = [βU+αV+W+HT] 
+k = (beta * u1 + alpha * v1 + w1) # k = [βU+αV+W] 
 
 assert (u + alpha) * (v + beta) == alpha * beta + k + c # should be equal
 
@@ -384,9 +383,9 @@ for i in range(1, len(K_priv_G1_terms)):
     K_priv_G1 = add(K_priv_G1, K_priv_G1_terms[i])
 
 C_G1 = add(HT_G1, K_priv_G1)
+print(f"C_G1 = {C_G1}")
 
-
-# Part 6
+# # Part 6
 print("----------------------------------------- Part 6 -----------------------------------------")
 # Adding gamma and delta
 print("Setup phase")

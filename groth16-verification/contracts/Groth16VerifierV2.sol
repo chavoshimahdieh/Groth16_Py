@@ -45,7 +45,7 @@ contract Groth16VerifierV2 {
     // same goes for input values
     function input() public pure returns (uint256[2] memory _input) {
         _input[0] = 1;
-        _input[1] = 104;
+        _input[1] = 104; //out
     }
 
     function verifierKey() public pure returns (VerifierKey memory vk) {
@@ -92,7 +92,7 @@ contract Groth16VerifierV2 {
     function run(bytes memory _input) public view returns (bool) {
         // optional, the precompile checks this too and reverts (with no error) if false, this helps narrow down possible errors
         if (_input.length % 192 != 0) revert("Points must be a multiple of 6");
-        (bool success, bytes memory data) = address(0x08).staticcall(_input);
+        (bool success, bytes memory data) = address(0x08).staticcall(_input); //0x08:bn-128 deployed contract and staticcall: pairing function
         if (success) return abi.decode(data, (bool));
         revert("Wrong pairing");
     }
